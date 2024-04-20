@@ -283,24 +283,29 @@ with tab4:
     end_date_box = pd.to_datetime(st.date_input("End Date for Boxplot", value=df['fromDate'].max().date()))
     df_box = df[(df['fromDate'] >= start_date_box) & (df['fromDate'] <= end_date_box)]
     quantv = st.selectbox('Select quantile value of outliers to remove (from each column)', 
-                          options=[0,0.001, 0.005, 0.01, 0.02], index=0)
-    df_box = df[['asleep', 'deep', 'sleepHRV', 'sleepBPM', 'wakingBPM', 'efficiency']]
+                        options=[0,0.001, 0.005, 0.01, 0.02], index=0)
+
+    df_boxq = df_box[['asleep', 'deep', 'quality', 'sleepBPM', 'sleepHRV', 'efficiency']]
     
-    if quantv != 0:
-        for col in df_box.columns:
-            df_box = df_box[(df_box[col] > df_box[col].quantile(quantv)) & (df_box[col] < df_box[col].quantile(1-quantv))]
-
-    st.text(f"Percentage of dataset removed: {round(((len(df) - len(df_box)) / len(df)) * 100, 2)}%")
-
+    if quantv == 0:
+        df_boxq_filtered = df_boxq.copy()
+    else:
+        df_boxq_filtered = df_boxq.copy()
+        for col in df_boxq.columns:
+            df_boxq_filtered = df_boxq_filtered[(df_boxq_filtered[col] > df_boxq[col].quantile(quantv)) & 
+                                            (df_boxq_filtered[col] < df_boxq[col].quantile(1 - quantv))]
+        
     # Boxplots
+    fig, axes = plt.subplots(nrows=3, ncols=2, figsize=(16,16))
     st.set_option('deprecation.showPyplotGlobalUse', False)
-    fig, axes = plt.subplots(nrows=len(df_box.columns)//2, ncols=2, figsize=(16, 16))
     plt.suptitle('Boxplots', size=20)
-    for i, col in enumerate(df_box.columns):
-        sns.boxplot(x=col, data=df_box, ax=axes[i//2, i%2])
+    for i, col in enumerate(df_boxq_filtered.columns):
+        sns.boxplot(x=col, data=df_boxq_filtered, ax=axes[i//2, i%2])
         axes[i//2, i%2].set_title(f'{col}')
     plt.tight_layout()
     st.pyplot(fig)
+
+    st.text(f"Percentage of dataset retained: {round(len(df_boxq_filtered) / len(df_box)*100,2)}%")
 
 with tab5:
     start_date_hist = pd.to_datetime(st.date_input("Start Date for Histogram", value=df['fromDate'].min().date()))
