@@ -85,7 +85,7 @@ df['qual/asleep'] = df['quality'] / df['asleep']
 df['deep/asleep'] = df['deep'] / df['asleep']
 
 # Streamlit
-tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(['Summary', 'Charts','Rolling Window Charts', 'Boxplots', 'Histograms', 'Correlation Matrix'])
+tab1, tab2, tab3, tab4, tab5 = st.tabs(['Summary', 'Charts','Rolling Window Charts', 'Boxplots', 'Histograms'])
 
 with tab1:
     st.header('Summary')
@@ -328,11 +328,11 @@ with tab5:
         ax1.set_ylabel('Frequency')
         st.pyplot(fig1)
 
-with tab6:
-    # Exclude columns that start with 'Roll' or contain a '/'
-    correlation_matrix = round(df.drop(columns=[col for col in df.columns if 'Roll' in col or '/' in col]).corr(), 4)
-    st.set_option('deprecation.showPyplotGlobalUse', False)
-    fig, ax = plt.subplots(figsize=(12, 10))
-    sns.heatmap(correlation_matrix, annot=True, cmap='coolwarm', center=0, ax=ax)
-    ax.set_title('Correlation Matrix')
-    st.pyplot(fig)
+# with tab6:
+#     # Exclude columns that start with 'Roll' or contain a '/'
+#     correlation_matrix = round(df.drop(columns=[col for col in df.columns if 'Roll' in col or '/' in col]).corr(), 4)
+#     st.set_option('deprecation.showPyplotGlobalUse', False)
+#     fig, ax = plt.subplots(figsize=(12, 10))
+#     sns.heatmap(correlation_matrix, annot=True, cmap='coolwarm', center=0, ax=ax)
+#     ax.set_title('Correlation Matrix')
+#     st.pyplot(fig)
