@@ -35,12 +35,11 @@ else:
     df = df.drop_duplicates(subset='fromDate')
 
 # Drop Unneccesary rows
-df = df.drop(['fellAsleepIn', 'SpO2Avg', 'SpO2Min', 'SpO2Max', 'respAvg', 'respMin', 'respMax',
+df = df.drop(['ISO8601','fellAsleepIn', 'SpO2Avg', 'SpO2Min', 'SpO2Max', 'respAvg', 'respMin', 'respMax',
               'tags', 'notes', 'asleepAvg7','efficiencyAvg7', 'qualityAvg7', 'deepAvg7', 'sleepBPMAvg7', 
               'dayBPMAvg7', 'wakingBPMAvg7', 'hrvAvg7','sleepHRVAvg7'], axis=1)
 
 # Datetime conversions
-df['ISO8601'] = pd.to_datetime(df['ISO8601'])
 df['fromDate'] = pd.to_datetime(df['fromDate'])
 df['toDate'] = pd.to_datetime(df['toDate'])
 df['bedtime'] = pd.to_datetime(df['bedtime']).dt.time
@@ -330,7 +329,8 @@ with tab5:
         st.pyplot(fig1)
 
 with tab6:
-    correlation_matrix = round(df[[col for col in df.columns if 'Roll' not in col and '/' not in col]].corr(),4)
+    # Exclude columns that start with 'Roll' or contain a '/'
+    correlation_matrix = round(df.drop(columns=[col for col in df.columns if 'Roll' in col or '/' in col]).corr(), 4)
     st.set_option('deprecation.showPyplotGlobalUse', False)
     fig, ax = plt.subplots(figsize=(12, 10))
     sns.heatmap(correlation_matrix, annot=True, cmap='coolwarm', center=0, ax=ax)
