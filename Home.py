@@ -296,14 +296,22 @@ with tab4:
                                             (df_boxq_filtered[col] < df_boxq[col].quantile(1 - quantv))]
         
     # Boxplots
-    fig, axes = plt.subplots(nrows=3, ncols=2, figsize=(16,16))
-    st.set_option('deprecation.showPyplotGlobalUse', False)
+    # Check for duplicate column names
+    duplicate_columns = df_boxq_filtered.columns[df_boxq_filtered.columns.duplicated()]
+    if not duplicate_columns.empty:
+        print("Duplicate columns found:", duplicate_columns)
+        # Handle duplicate column names, for example, by renaming them
+        df_boxq_filtered.columns = [f"{col}_{i}" if df_boxq_filtered.columns.duplicated().sum() > 0 else col for i, col in enumerate(df_boxq_filtered.columns)]
+
+    # Now create boxplots
+    fig, axes = plt.subplots(nrows=3, ncols=2, figsize=(16, 10))
     plt.suptitle('Boxplots', size=20)
     for i, col in enumerate(df_boxq_filtered.columns):
         sns.boxplot(x=col, data=df_boxq_filtered, ax=axes[i//2, i%2])
         axes[i//2, i%2].set_title(f'{col}')
     plt.tight_layout()
     st.pyplot(fig)
+
 
     st.text(f"Percentage of dataset retained: {round(len(df_boxq_filtered) / len(df_box)*100,2)}%")
 
