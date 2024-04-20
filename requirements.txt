@@ -4,4 +4,4 @@ matplotlib
 seaborn
 streamlit
 datetime
-dateutil
+python-dateutil

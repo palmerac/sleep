@@ -62,11 +62,12 @@ df['deep/asleep'] = df['deep'] / df['asleep']
 
 # Streamlit
 st.set_page_config(layout="wide")
+st.title('Sleep Data Dashboard')
 
 tab1, tab2, tab3 = st.tabs(['Summary', 'Rolling Window Means', 'Boxplots'])
 
 with tab1:
-    st.header('Sleep Data Dashboard')
+    st.header('Summary Statistics')
     st.text(f"Percentage of days tracked: {percentage_tracked}%")
     st.text(f'Time Elapsed: {timeElapsed}')
     st.text(f'Time Missed: {monthsMissed} months, {daysMissed} days')
