@@ -10,8 +10,18 @@ import glob
 plt.style.use('ggplot')
 st.set_page_config(layout="wide")
 
+st.title('AutoSleep Dashboard')
+st.sidebar.markdown("Made with ❤️ by [Aaron](https://github.com/palmerac)")
+
 # Read files
-uploaded_file = st.sidebar.file_uploader("Upload CSV file from AutoSleep", type=['csv'])
+st.sidebar.markdown("To run with your own AutoSleep data, follow these steps:")
+st.sidebar.markdown("1. On AutoSleep app go to Settings")
+st.sidebar.markdown("2. Export --> History")
+st.sidebar.markdown("3. Select Dates")
+st.sidebar.markdown("4. Download File")
+st.sidebar.markdown("4. Upload File")
+
+uploaded_file = st.sidebar.file_uploader("Upload Box", type=['csv'])
 
 if uploaded_file is not None:
     df = pd.read_csv(uploaded_file)
@@ -43,7 +53,6 @@ df['deep'] = pd.to_datetime(df['deep'], format='%H:%M:%S').dt.hour  + (pd.to_dat
 
 df = df[df['asleep'] <= 15]
 
-
 # Elapsed days and first/last
 daysPassed = (df['fromDate'].max() - df['fromDate'].min()).days
 first_day = df['fromDate'].min().strftime('%Y-%m-%d')
@@ -52,7 +61,6 @@ last_day = df['fromDate'].max().strftime('%Y-%m-%d')
 # Totals
 tot_sleeptime = df['asleep'].sum()
 tot_sleeptime_pct = round(tot_sleeptime / (len(df) * 24)*100, 2)
-
 
 # Find the percentage of days tracked
 percentage_tracked = round((len(df) / daysPassed) * 100,2)
@@ -78,12 +86,52 @@ df['qual/asleep'] = df['quality'] / df['asleep']
 df['deep/asleep'] = df['deep'] / df['asleep']
 
 # Streamlit
-st.title('Sleep Data Dashboard')
-
 tab1, tab2, tab3, tab4, tab5 = st.tabs(['Summary', 'Charts','Rolling Window Charts', 'Boxplots', 'Correlation Matrix'])
 
 with tab1:
     st.header('Summary')
+    col1, col2, col3, col4 = st.columns(4)
+    with col1:
+        avg_sleep_hours = int(df['asleep'].mean())
+        avg_sleep_minutes = round((df['asleep'].mean() - avg_sleep_hours) * 60)
+        median_sleep_hours = int(df['asleep'].median())
+        median_sleep_minutes = round((df['asleep'].median() - median_sleep_hours) * 60)
+        mode_sleep_hours = int(df['asleep'].mode().iloc[0])
+        mode_sleep_minutes = round((df['asleep'].mode().iloc[0] - mode_sleep_hours) * 60)
+    
+        st.subheader("Sleep Time")
+        st.text(f"Average: {avg_sleep_hours}:{avg_sleep_minutes}")
+        st.text(f"Median: {median_sleep_hours}:{median_sleep_minutes}")
+        st.text(f"Mode: {mode_sleep_hours}:{mode_sleep_minutes}")
+
+    with col2:
+        st.subheader("Sleep BPM")
+        st.text(f"Average: {round(df['sleepBPM'].mean(),1)}")
+        st.text(f"Median: {round(df['sleepBPM'].median(),1)}")
+        st.text(f"Mode: {round(df['sleepBPM'].mode().iloc[0],1)}")
+    
+    with col3:
+        st.subheader("Sleep HRV")
+        st.text(f"Average: {round(df['sleepHRV'].mean(),1)}")
+        st.text(f"Median: {round(df['sleepHRV'].median(),1)}")
+        st.text(f"Mode: {round(df['sleepHRV'].mode().iloc[0],1)}")
+
+    with col4:
+        st.subheader("Efficiency")
+        st.text(f"Average: {round(df['efficiency'].mean(),1)}")
+        st.text(f"Median: {round(df['efficiency'].median(),1)}")
+        st.text(f"Mode: {round(df['efficiency'].mode().iloc[0],1)}")
+
+    st.markdown('---')
+
+    st.text(f"First day tracked: {first_day}")
+    st.text(f"Most recent day tracked: {last_day}")
+    st.text(f"Percentage of days tracked: {percentage_tracked}%")
+    st.text(f'Time Elapsed: {timeElapsed}')
+    st.text(f'Time Missed: {monthsMissed} months, {daysMissed} days')
+
+    st.markdown('---')
+
     years = int(tot_sleeptime // 8760)
     months = int((tot_sleeptime % 8760) // 730)
     days = int(((tot_sleeptime % 8760) % 730) // 24)
@@ -102,14 +150,7 @@ with tab1:
         time_slept += f'{minutes} minutes'
     st.text(time_slept)
     st.text(f"Time Slept as % of Time Elapsed: {tot_sleeptime_pct}%")
-    st.text("------------------------------------------------------------")
-    st.text(f"First day tracked: {first_day}")
-    st.text(f"Most recent day tracked: {last_day}")
-    st.text("------------------------------------------------------------")
-    st.text(f"Percentage of days tracked: {percentage_tracked}%")
-    st.text(f'Time Elapsed: {timeElapsed}')
-    st.text(f'Time Missed: {monthsMissed} months, {daysMissed} days')
-    st.text("------------------------------------------------------------")
+    
 
 with tab2:
     st.header('Charts')
@@ -119,7 +160,8 @@ with tab2:
     end_date_key = "end_date_input"  # Unique key for the start date input widget
     end_date = pd.to_datetime(st.date_input("End Date", value=df['fromDate'].max().date(), key=end_date_key))
     # Weekday Chart
-    with st.expander('Average Sleep and Sleep BPM by Weekday'):
+    st.text("Average Sleep and Sleep BPM by:")
+    with st.expander('Weekday'):
         st.text("Weekends are generally delayed one day due to falling asleep after midnight (ex. Sunday value is Saturday night)")
         df_filtered = df[(df['fromDate'] >= start_date) & (df['fromDate'] <= end_date)]
         df_filtered['weekday'] = df_filtered['fromDate'].dt.day_name()
@@ -150,7 +192,7 @@ with tab2:
         plt.title('Average Asleep Time and Sleep BPM by Weekday')
         plt.xticks(rotation=45)
         st.pyplot(fig)
-    with st.expander("Average Sleep and Sleep BPM by Month"):
+    with st.expander("Month"):
         df_filtered['month'] = df_filtered['fromDate'].dt.month_name()
         df_filtered['month'] = pd.Categorical(df_filtered['month'], categories=['January', 'February', 'March', 'April', 'May', 'June',
                                                                                  'July', 'August', 'September', 'October', 'November', 'December'], ordered=True)
@@ -239,7 +281,7 @@ with tab4:
         for col in df_box.columns:
             df_box = df_box[(df_box[col] > df_box[col].quantile(quantv)) & (df_box[col] < df_box[col].quantile(1-quantv))]
 
-    st.text(f"Percentage of outliers removed: {round(((len(df) - len(df_box)) / len(df)) * 100, 2)}%")
+    st.text(f"Percentage of dataset removed: {round(((len(df) - len(df_box)) / len(df)) * 100, 2)}%")
 
     # Boxplots
     st.set_option('deprecation.showPyplotGlobalUse', False)
