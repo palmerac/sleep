@@ -281,39 +281,23 @@ with tab3:
 with tab4:
     start_date_box = pd.to_datetime(st.date_input("Start Date for Boxplot", value=df['fromDate'].min().date()))
     end_date_box = pd.to_datetime(st.date_input("End Date for Boxplot", value=df['fromDate'].max().date()))
+    st.text("Top and Bottom 1% of outliers are removed from each metric before plotting")
     df_box = df[(df['fromDate'] >= start_date_box) & (df['fromDate'] <= end_date_box)]
-    quantv = st.selectbox('Select quantile value of outliers to remove (from each column)', 
-                        options=[0,0.001, 0.005, 0.01, 0.02], index=0)
-
-    df_boxq = df_box[['asleep', 'deep', 'quality', 'sleepBPM', 'sleepHRV', 'efficiency']]
-    
-    if quantv == 0:
-        df_boxq_filtered = df_boxq.copy()
-    else:
-        df_boxq_filtered = df_boxq.copy()
-        for col in df_boxq.columns:
-            df_boxq_filtered = df_boxq_filtered[(df_boxq_filtered[col] > df_boxq[col].quantile(quantv)) & 
-                                            (df_boxq_filtered[col] < df_boxq[col].quantile(1 - quantv))]
+    df_box = df_box[['asleep', 'quality', 'deep', 'sleepBPM', 'sleepHRV', 'efficiency']]
+    for col in df_box.columns:
+        lower_bound = df_box[col].quantile(0.01)
+        upper_bound = df_box[col].quantile(0.99)
+        df_box = df_box[(df_box[col] > lower_bound) & (df_box[col] < upper_bound)]
         
     # Boxplots
-    # Check for duplicate column names
-    duplicate_columns = df_boxq_filtered.columns[df_boxq_filtered.columns.duplicated()]
-    if not duplicate_columns.empty:
-        print("Duplicate columns found:", duplicate_columns)
-        # Handle duplicate column names, for example, by renaming them
-        df_boxq_filtered.columns = [f"{col}_{i}" if df_boxq_filtered.columns.duplicated().sum() > 0 else col for i, col in enumerate(df_boxq_filtered.columns)]
-
     # Now create boxplots
-    fig, axes = plt.subplots(nrows=3, ncols=2, figsize=(16, 10))
+    fig, axes = plt.subplots(nrows=3, ncols=2, figsize=(16, 16))
     plt.suptitle('Boxplots', size=20)
-    for i, col in enumerate(df_boxq_filtered.columns):
-        sns.boxplot(x=col, data=df_boxq_filtered, ax=axes[i//2, i%2])
+    for i, col in enumerate(df_box.columns):
+        sns.boxplot(x=col, data=df_box, ax=axes[i//2, i%2])
         axes[i//2, i%2].set_title(f'{col}')
     plt.tight_layout()
     st.pyplot(fig)
-
-
-    st.text(f"Percentage of dataset retained: {round(len(df_boxq_filtered) / len(df_box)*100,2)}%")
 
 with tab5:
     start_date_hist = pd.to_datetime(st.date_input("Start Date for Histogram", value=df['fromDate'].min().date()))
