@@ -154,7 +154,7 @@ with tab1:
     if minutes != 0:
         time_slept += f'{minutes} minutes'
     st.text(time_slept)
-    st.text(f"Time Slept as % of Days Recorded: {tot_sleeptime_pct}%")
+    st.text(f"% of day spent Sleeping: {tot_sleeptime_pct}%")
     
 
 with tab2:
@@ -196,6 +196,7 @@ with tab2:
         plt.title('Average Asleep Time and Sleep BPM by Weekday')
         plt.xticks(rotation=45)
         st.pyplot(fig)
+
     with st.expander("Month"):
         df_filtered['month'] = df_filtered['fromDate'].dt.month_name()
         df_filtered['month'] = pd.Categorical(df_filtered['month'], categories=['January', 'February', 'March', 'April', 'May', 'June',
@@ -335,3 +336,6 @@ with tab6:
     sns.heatmap(correlation_matrix, annot=True, cmap='coolwarm', center=0, ax=ax)
     ax.set_title('Correlation Matrix')
     st.pyplot(fig)
+    st.subheader("Top 10 Correlated Values w/ Sleep Time")
+    top_10_correlations = abs(correlation_matrix['asleep']).sort_values(ascending=False).head(10)
+    st.table(top_10_correlations)
