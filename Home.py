@@ -4,14 +4,12 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import streamlit as st
 import datetime as dt
-import os
-import glob
 
 plt.style.use('ggplot')
 st.set_page_config(layout="wide")
 
 st.title('AutoSleep Dashboard')
-st.sidebar.markdown("Made with ❤️ by [Aaron](https://github.com/palmerac)")
+st.sidebar.markdown("Made with ❤️ by [palmerac](https://github.com/palmerac)")
 
 # Read files
 st.sidebar.markdown("To run with your own AutoSleep data, follow these steps:")
@@ -19,7 +17,7 @@ st.sidebar.markdown("1. On AutoSleep app and go to Settings")
 st.sidebar.markdown("2. Export --> History")
 st.sidebar.markdown("3. Select Dates")
 st.sidebar.markdown("4. Download File")
-st.sidebar.markdown("4. Upload File")
+st.sidebar.markdown("4. Upload File in box below")
 
 uploaded_file = st.sidebar.file_uploader("Upload Box", type=['csv'])
 
@@ -85,7 +83,7 @@ df['qual/asleep'] = df['quality'] / df['asleep']
 df['deep/asleep'] = df['deep'] / df['asleep']
 
 # Streamlit
-tab1, tab2, tab3, tab4, tab5 = st.tabs(['Summary', 'Charts','Rolling Window Charts', 'Boxplots', 'Histograms'])
+tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(['Summary', 'Charts','Moving Average Charts', 'Boxplots', 'Histograms', 'Correlation Matrix'])
 
 with tab1:
     st.header('Summary')
@@ -328,11 +326,12 @@ with tab5:
         ax1.set_ylabel('Frequency')
         st.pyplot(fig1)
 
-# with tab6:
-#     # Exclude columns that start with 'Roll' or contain a '/'
-#     correlation_matrix = round(df.drop(columns=[col for col in df.columns if 'Roll' in col or '/' in col]).corr(), 4)
-#     st.set_option('deprecation.showPyplotGlobalUse', False)
-#     fig, ax = plt.subplots(figsize=(12, 10))
-#     sns.heatmap(correlation_matrix, annot=True, cmap='coolwarm', center=0, ax=ax)
-#     ax.set_title('Correlation Matrix')
-#     st.pyplot(fig)
+with tab6:
+    # Exclude columns that start with 'Roll' or contain a '/'
+    dfSimple = df.drop(columns=[col for col in df.columns if 'Roll' in col or '/' in col], axis=1)
+    correlation_matrix = round(dfSimple.corr(),4)
+    st.set_option('deprecation.showPyplotGlobalUse', False)
+    fig, ax = plt.subplots(figsize=(12, 10))
+    sns.heatmap(correlation_matrix, annot=True, cmap='coolwarm', center=0, ax=ax)
+    ax.set_title('Correlation Matrix')
+    st.pyplot(fig)
