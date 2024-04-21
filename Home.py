@@ -329,7 +329,7 @@ with tab5:
 with tab6:
     # Exclude columns that start with 'Roll' or contain a '/'
     dfSimple = df.drop(columns=[col for col in df.columns if 'Roll' in col or '/' in col], axis=1)
-    correlation_matrix = round(dfSimple.corr(),4)
+    correlation_matrix = round(dfSimple.corr(numeric_only=True),4)
     st.set_option('deprecation.showPyplotGlobalUse', False)
     fig, ax = plt.subplots(figsize=(12, 10))
     sns.heatmap(correlation_matrix, annot=True, cmap='coolwarm', center=0, ax=ax)
