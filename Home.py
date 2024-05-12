@@ -19,18 +19,31 @@ st.sidebar.markdown("3. Select Dates")
 st.sidebar.markdown("4. Download File")
 st.sidebar.markdown("4. Upload File in box below")
 
+# uploaded_file = st.sidebar.file_uploader("Upload Box", type=['csv'])
+
+# if uploaded_file is not None:
+#     df = pd.read_csv(uploaded_file)
+# else:
+#     # Get all csv files in the folder
+#     csv_files = ['csvs/AutoSleep-20200124-to-20231109.csv', 'csvs/AutoSleep-20231018-to-20240415.csv']
+
+#     # Read all csv files and concatenate them
+#     df = pd.concat([pd.read_csv(f) for f in csv_files])
+#     # Remove duplicate rows
+#     df = df.drop_duplicates(subset='fromDate')
+
+@st.cache_data
+def load_data(uploaded_file):
+    if uploaded_file is not None:
+        df = pd.read_csv(uploaded_file)
+    else:
+        csv_files = ['csvs/AutoSleep-20200124-to-20221231.csv', 'csvs/AutoSleep-20230101-to-20240511.csv']
+        df = pd.concat([pd.read_csv(f) for f in csv_files])
+        df = df.drop_duplicates(subset='fromDate')
+    return df
+
 uploaded_file = st.sidebar.file_uploader("Upload Box", type=['csv'])
-
-if uploaded_file is not None:
-    df = pd.read_csv(uploaded_file)
-else:
-    # Get all csv files in the folder
-    csv_files = ['csvs/AutoSleep-20200124-to-20231109.csv', 'csvs/AutoSleep-20231018-to-20240415.csv']
-
-    # Read all csv files and concatenate them
-    df = pd.concat([pd.read_csv(f) for f in csv_files])
-    # Remove duplicate rows
-    df = df.drop_duplicates(subset='fromDate')
+df = load_data(uploaded_file)
 
 # Drop Unneccesary rows
 df = df.drop(['ISO8601','fellAsleepIn', 'SpO2Avg', 'SpO2Min', 'SpO2Max', 'respAvg', 'respMin', 'respMax',
@@ -58,6 +71,8 @@ last_day = df['fromDate'].max().strftime('%Y-%m-%d')
 # Totals
 tot_sleeptime = df['asleep'].sum()
 tot_sleeptime_pct = round(tot_sleeptime / (len(df) * 24)*100, 2)
+tot_bedtime = df['inBed'].sum()
+tot_bedtime_pct = round(tot_bedtime / (len(df) * 24)*100, 2)
 
 # Find the percentage of days tracked
 percentage_tracked = round((len(df) / daysPassed) * 100,2)
@@ -81,13 +96,14 @@ for col in cols_to_roll:
 
 df['qual/asleep'] = df['quality'] / df['asleep']
 df['deep/asleep'] = df['deep'] / df['asleep']
+df['TotalBeats'] = (df['asleep'] * df['sleepBPM'] * 60)
 
 # Streamlit
 tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(['Summary', 'Charts','Moving Average Charts', 'Boxplots', 'Histograms', 'Correlation Matrix'])
 
 with tab1:
     st.header('Summary')
-    col1, col2, col3, col4, col5 = st.columns(5)
+    col1, col2, col3, col4, col5, col6 = st.columns(6)
     with col1:
         avg_sleep_hours = int(df['asleep'].mean())
         avg_sleep_minutes = round((df['asleep'].mean() - avg_sleep_hours) * 60)
@@ -97,65 +113,110 @@ with tab1:
         mode_sleep_minutes = round((df['asleep'].mode().iloc[0] - mode_sleep_hours) * 60)
         mode_sleep_hours_count = df['asleep'].value_counts().max()
     
-        st.subheader("Sleep Time")
-        st.text(f"Average: {avg_sleep_hours}:{avg_sleep_minutes}")
-        st.text(f"Median: {median_sleep_hours}:{median_sleep_minutes}")
-        st.text(f"Mode: {mode_sleep_hours}:{mode_sleep_minutes} ({mode_sleep_hours_count})")
-
+        st.markdown("#### Sleep Time")
+        st.markdown(f"Average: {avg_sleep_hours}:{avg_sleep_minutes}")
+        st.markdown(f"Median: {median_sleep_hours}:{median_sleep_minutes}")
+        st.markdown(f"Mode: {mode_sleep_hours}:{mode_sleep_minutes} ({mode_sleep_hours_count})")
     with col2:
-        st.subheader("Sleep BPM")
-        st.text(f"Average: {round(df['sleepBPM'].mean(),1)}")
-        st.text(f"Median: {round(df['sleepBPM'].median(),1)}")
-        st.text(f"Mode: {round(df['sleepBPM'].mode().iloc[0],1)} ({df['sleepBPM'].value_counts().max()})")
+        avg_inbed_hours = int(df['inBed'].mean())
+        avg_inbed_minutes = round((df['inBed'].mean() - avg_inbed_hours) * 60)
+        median_inbed_hours = int(df['inBed'].median())
+        median_inbed_minutes = round((df['inBed'].median() - median_inbed_hours) * 60)
+        mode_inbed_hours = int(df['inBed'].mode().iloc[0])
+        mode_inbed_minutes = round((df['inBed'].mode().iloc[0] - mode_inbed_hours) * 60)
+        mode_inbed_hours_count = df['inBed'].value_counts().max()
+
+        st.markdown("#### In Bed Time")
+        st.markdown(f"Average: {avg_sleep_hours}:{avg_sleep_minutes}")
+        st.markdown(f"Median: {median_sleep_hours}:{median_sleep_minutes}")
+        st.markdown(f"Mode: {mode_sleep_hours}:{mode_sleep_minutes} ({mode_sleep_hours_count})")
+
+
+
 
     with col3:
-        st.subheader("Waking BPM")
-        st.text(f"Average: {round(df['wakingBPM'].mean(),1)}")
-        st.text(f"Median: {round(df['wakingBPM'].median(),1)}")
-        st.text(f"Mode: {round(df['wakingBPM'].mode().iloc[0],1)} ({df['wakingBPM'].value_counts().max()})")
-    
+        st.markdown("#### Sleep BPM")
+        st.markdown(f"Average: {round(df['sleepBPM'].mean(),1)}")
+        st.markdown(f"Median: {round(df['sleepBPM'].median(),1)}")
+        st.markdown(f"Mode: {round(df['sleepBPM'].mode().iloc[0],1)} ({df['sleepBPM'].value_counts().max()})")
+
     with col4:
-        st.subheader("Sleep HRV")
-        st.text(f"Average: {round(df['sleepHRV'].mean(),1)}")
-        st.text(f"Median: {round(df['sleepHRV'].median(),1)}")
-        st.text(f"Mode: {round(df['sleepHRV'].mode().iloc[0],1)} ({df['sleepHRV'].value_counts().max()})")
-
-    with col5:
-        st.subheader("Efficiency")
-        st.text(f"Average: {round(df['efficiency'].mean(),1)}")
-        st.text(f"Median: {round(df['efficiency'].median(),1)}")
-        st.text(f"Mode: {round(df['efficiency'].mode().iloc[0],1)} ({df['efficiency'].value_counts().max()})")
-
-    st.markdown('---')
-
-    st.text(f"First day tracked: {first_day}")
-    st.text(f"Most recent day tracked: {last_day}")
-    st.text(f"Sleeps tracked: {len(df)}")
-    st.text(f"Percentage of days tracked: {percentage_tracked}%")
-    st.text(f'Time Elapsed: {timeElapsed}')
-    st.text(f'Time Missed: {monthsMissed} months, {daysMissed} days')
-
-    st.markdown('---')
-
-    years = int(tot_sleeptime // 8760)
-    months = int((tot_sleeptime % 8760) // 730)
-    days = int(((tot_sleeptime % 8760) % 730) // 24)
-    hours = int(((tot_sleeptime % 8760) % 730) % 24)
-    minutes = int((tot_sleeptime % 1) * 60)
-    time_slept = f'Total Time Slept: '
-    if years != 0:
-        time_slept += f'{years} years, '
-    if months != 0:
-        time_slept += f'{months} months, '
-    if days != 0:
-        time_slept += f'{days} days, '
-    if hours != 0:
-        time_slept += f'{hours} hours, '
-    if minutes != 0:
-        time_slept += f'{minutes} minutes'
-    st.text(time_slept)
-    st.text(f"% of day spent Sleeping: {tot_sleeptime_pct}%")
+        st.markdown("#### Waking BPM")
+        st.markdown(f"Average: {round(df['wakingBPM'].mean(),1)}")
+        st.markdown(f"Median: {round(df['wakingBPM'].median(),1)}")
+        st.markdown(f"Mode: {round(df['wakingBPM'].mode().iloc[0],1)} ({df['wakingBPM'].value_counts().max()})")
     
+    with col5:
+        st.markdown("#### Sleep HRV")
+        st.markdown(f"Average: {round(df['sleepHRV'].mean(),1)}")
+        st.markdown(f"Median: {round(df['sleepHRV'].median(),1)}")
+        st.markdown(f"Mode: {round(df['sleepHRV'].mode().iloc[0],1)} ({df['sleepHRV'].value_counts().max()})")
+
+    with col6:
+        st.markdown("#### Efficiency")
+        st.markdown(f"Average: {round(df['efficiency'].mean(),1)}")
+        st.markdown(f"Median: {round(df['efficiency'].median(),1)}")
+        st.markdown(f"Mode: {round(df['efficiency'].mode().iloc[0],1)} ({df['efficiency'].value_counts().max()})")
+
+    st.markdown('---')
+    col1, col2 = st.columns(2)
+    with col1:
+        st.markdown(f"First day tracked: {first_day}")
+        st.markdown(f"Most recent day tracked: {last_day}")
+        st.markdown(f'Time Elapsed: {timeElapsed}')
+        st.markdown(f'Time Missed: {monthsMissed} months, {daysMissed} days')
+    with col2:
+        st.markdown(f"Sleeps tracked: {len(df)}")
+        st.markdown(f"Sleeps missed: {daysPassed - len(df)}")
+        st.markdown(f"Percentage of days tracked: {percentage_tracked}%")
+        st.markdown(f"Total Heartbeats: {df['TotalBeats'].sum().astype(int):,}")
+
+    st.markdown('---')
+
+# Time Slept
+    col1, col2 = st.columns(2)
+    with col1:
+        st.markdown(f"Total Hours Slept: {round(tot_sleeptime,):,}h")
+        st.markdown(f"% of day spent Sleeping: {tot_sleeptime_pct}%")
+
+        years = int(tot_sleeptime // 8760)
+        months = int((tot_sleeptime % 8760) // 730)
+        days = int(((tot_sleeptime % 8760) % 730) // 24)
+        hours = int(((tot_sleeptime % 8760) % 730) % 24)
+        minutes = int((((tot_sleeptime % 8760) % 730) % 24 - hours) * 60)
+        time_slept = f'Total Time Slept: '
+        if years != 0:
+            time_slept += f'{years} years, '
+        if months != 0:
+            time_slept += f'{months} months, '
+        if days != 0:
+            time_slept += f'{days} days, '
+        if hours != 0:
+            time_slept += f'{hours} hours, '
+        if minutes != 0:
+            time_slept += f'{minutes} minutes'
+        st.markdown(time_slept)
+    
+    with col2:
+        st.markdown(f"Total Time in Bed: {round(tot_bedtime):,}h")
+        st.markdown(f"% of day spent in Bed: {tot_bedtime_pct}%")
+        years = int(tot_bedtime // 8760)
+        months = int((tot_bedtime % 8760) // 730)
+        days = int(((tot_bedtime % 8760) % 730) // 24)
+        hours = int(((tot_bedtime % 8760) % 730) % 24)
+        minutes = int((((tot_bedtime % 8760) % 730) % 24 - hours) * 60)
+        time_inbed = f'Total Time in Bed: '
+        if years != 0:
+            time_inbed += f'{years} years, '
+        if months != 0:
+            time_inbed += f'{months} months, '
+        if days != 0:
+            time_inbed += f'{days} days, '
+        if hours != 0:
+            time_inbed += f'{hours} hours, '
+        if minutes != 0:
+            time_inbed += f'{minutes} minutes'
+        st.markdown(time_inbed)
 
 with tab2:
     start_date_key = "start_date_input"  # Unique key for the start date input widget
@@ -228,8 +289,8 @@ with tab2:
         st.pyplot(fig)
 
 with tab3:
-    start_date = pd.to_datetime(st.date_input("Start Date", value=df['fromDate'].min().date()))
-    end_date = pd.to_datetime(st.date_input("End Date", value=df['fromDate'].max().date()))
+    start_date = pd.to_datetime(st.date_input("Start Date", value=df['fromDate'].min().date(), min_value=df['fromDate'].min().date()))
+    end_date = pd.to_datetime(st.date_input("End Date", value=df['fromDate'].max().date(), max_value=df['fromDate'].max().date()))
     df_filtered = df[(df['fromDate'] >= start_date) & (df['fromDate'] <= end_date)]
     period = st.selectbox('Select Period', [7, 15, 30, 60, 90])
 
@@ -237,41 +298,58 @@ with tab3:
     with st.expander("Time Asleep"):
         fig, ax = plt.subplots(figsize=(18,6))
         ax.plot(df_filtered['fromDate'], df_filtered[f'asleepRoll{period}'], label="Asleep")
-        ax.plot(df_filtered['fromDate'], df_filtered[f'qualityRoll{period}'], label="Quality")
-        ax.plot(df_filtered['fromDate'], df_filtered[f'deepRoll{period}'], label="Deep")
+        ax.axhline(df_filtered[f'asleepRoll{period}'].max(), color='g', linestyle='--')
+        ax.axhline(df_filtered[f'asleepRoll{period}'].min(), color='b', linestyle='--')
+
+        min_date = df_filtered.loc[df_filtered[f'asleepRoll{period}'].idxmin()]['fromDate']
+        ax.text(min_date, (df_filtered[f'asleepRoll{period}'].min()*1.05), f'Min: {round(df_filtered[f"asleepRoll{period}"].min(),2)}', 
+                color='b', ha='right', va='center')
+        ax.text(min_date, (df_filtered[f'asleepRoll{period}'].max()*0.95), f'Max: {round(df_filtered[f"asleepRoll{period}"].max(),2)}', 
+                color='g', ha='right', va='center')
+
         ax.set_title(f'{period}-day Rolling Average Sleep')
         ax.set_xlabel('Date')
-        ax.set_ylabel('Sleep BPM')
+        ax.set_ylabel('Sleep')
         plt.legend()
         plt.xticks(rotation=45)
         st.pyplot(fig)
 
     with st.expander("Sleep BPM"):
-        fig1, ax1 = plt.subplots(figsize=(16,6))
-        ax1.plot(df_filtered['fromDate'], df_filtered[f'sleepBPMRoll{period}'])
-        ax1.set_title(f'{period}-day Rolling Average Sleep BPM')
-        ax1.set_xlabel('Date')
-        ax1.set_ylabel('Sleep BPM')
+        fig, ax = plt.subplots(figsize=(16,6))
+        ax.plot(df_filtered['fromDate'], df_filtered[f'sleepBPMRoll{period}'])
+        ax.set_title(f'{period}-day Rolling Average Sleep BPM')
+        ax.set_xlabel('Date')
+        ax.set_ylabel('Sleep BPM')
         plt.xticks(rotation=45)
-        st.pyplot(fig1)
+        st.pyplot(fig)
 
     with st.expander("Efficiency"):
-        fig1, ax1 = plt.subplots(figsize=(16,6))
-        ax1.plot(df_filtered['fromDate'], df_filtered[f'efficiencyRoll{period}'])
-        ax1.set_title(f'{period}-day Rolling Average Efficiency')
-        ax1.set_xlabel('Date')
-        ax1.set_ylabel('Efficiency')
+        fig, ax = plt.subplots(figsize=(16,6))
+        ax.plot(df_filtered['fromDate'], df_filtered[f'efficiencyRoll{period}'])
+        ax.axhline(df_filtered[f'sleepBPMRoll{period}'].max(), color='g', linestyle='--')
+        # ax.axhline(df_filtered[f'sleepBPMRoll{period}'].min(), color='b', linestyle='--')
+
+        # min_date = df_filtered.loc[df_filtered[f'sleepBPMRoll{period}'].idxmin()]['fromDate']
+        # ax.text(min_date, (df_filtered[f'sleepBPMRoll{period}'].min()*1.05), f'Min: {round(df_filtered[f"sleepBPMRoll{period}"].min(),2)}', 
+        #         color='b', ha='right', va='center')
+        # ax.text(min_date, (df_filtered[f'sleepBPMRoll{period}'].max()*0.95), f'Max: {round(df_filtered[f"sleepBPMRoll{period}"].max(),2)}', 
+        #         color='g', ha='right', va='center')
+
+
+        ax.set_title(f'{period}-day Rolling Average Efficiency')
+        ax.set_xlabel('Date')
+        ax.set_ylabel('Efficiency')
         plt.xticks(rotation=45)
-        st.pyplot(fig1)
+        st.pyplot(fig)
 
     with st.expander("Sleep HRV"):
-        fig1, ax1 = plt.subplots(figsize=(16,6))
-        ax1.plot(df_filtered['fromDate'], df_filtered[f'sleepHRVRoll{period}'])
-        ax1.set_title(f'{period}-day Rolling Average Sleep HRV')
-        ax1.set_xlabel('Date')
-        ax1.set_ylabel('Sleep HRV')
+        fig, ax = plt.subplots(figsize=(16,6))
+        ax.plot(df_filtered['fromDate'], df_filtered[f'sleepHRVRoll{period}'])
+        ax.set_title(f'{period}-day Rolling Average Sleep HRV')
+        ax.set_xlabel('Date')
+        ax.set_ylabel('Sleep HRV')
         plt.xticks(rotation=45)
-        st.pyplot(fig1)
+        st.pyplot(fig)
 
     with st.expander("Raw Data"):
         st.dataframe(df_filtered)
@@ -298,34 +376,36 @@ with tab4:
     st.pyplot(fig)
 
 with tab5:
-    start_date_hist = pd.to_datetime(st.date_input("Start Date for Histogram", value=df['fromDate'].min().date()))
-    end_date_hist = pd.to_datetime(st.date_input("End Date for Histogram", value=df['fromDate'].max().date()))
+    start_date_hist = pd.to_datetime(st.date_input("Start Date", value=df['fromDate'].min().date(), min_value=df['fromDate'].min().date(),
+                                                    key=hash('start_date_hist')))
+    end_date_hist = pd.to_datetime(st.date_input("End Date", value=df['fromDate'].max().date(), max_value=df['fromDate'].max().date(),
+                                                 key=hash('end_date_hist')))
     df_hist = df[(df['fromDate'] >= start_date_hist) & (df['fromDate'] <= end_date_hist)]
 
     with st.expander("Sleep Time"):
         df_slp_hist = df_hist[(df_hist['asleep'] >= 3) & (df_hist['asleep'] <= 12)]
-        fig1, ax1 = plt.subplots(figsize=(16,6))
-        ax1.hist(df_slp_hist['asleep'], bins=(12-3)*2, edgecolor='black')
-        ax1.set_title('Histogram of Asleep Time')
-        ax1.set_xlabel('Asleep Time (hours)')
-        ax1.set_ylabel('Frequency')
-        st.pyplot(fig1)
+        fig, ax = plt.subplots(figsize=(16,6))
+        ax.hist(df_slp_hist['asleep'], bins=(12-3)*2, edgecolor='black')
+        ax.set_title('Histogram of Asleep Time')
+        ax.set_xlabel('Asleep Time (hours)')
+        ax.set_ylabel('Frequency')
+        st.pyplot(fig)
 
     with st.expander("Sleep BPM"):
-        fig1, ax1 = plt.subplots(figsize=(16,6))
-        ax1.hist(df_hist['sleepBPM'], bins=int((90-40)/2.5), edgecolor='black', range=(40,90))
-        ax1.set_title('Histogram of Sleep BPM')
-        ax1.set_xlabel('Sleep BPM')
-        ax1.set_ylabel('Frequency')
-        st.pyplot(fig1)
+        fig, ax = plt.subplots(figsize=(16,6))
+        ax.hist(df_hist['sleepBPM'], bins=int((90-40)/2.5), edgecolor='black', range=(40,90))
+        ax.set_title('Histogram of Sleep BPM')
+        ax.set_xlabel('Sleep BPM')
+        ax.set_ylabel('Frequency')
+        st.pyplot(fig)
 
     with st.expander("Sleep HRV"):
-        fig1, ax1 = plt.subplots(figsize=(16,6))
-        ax1.hist(df_hist['sleepHRV'], bins=26, edgecolor='black', range=(20,150))
-        ax1.set_title('Histogram of Sleep HRV')
-        ax1.set_xlabel('Sleep HRV')
-        ax1.set_ylabel('Frequency')
-        st.pyplot(fig1)
+        fig, ax = plt.subplots(figsize=(16,6))
+        ax.hist(df_hist['sleepHRV'], bins=26, edgecolor='black', range=(20,150))
+        ax.set_title('Histogram of Sleep HRV')
+        ax.set_xlabel('Sleep HRV')
+        ax.set_ylabel('Frequency')
+        st.pyplot(fig)
 
 with tab6:
     # Exclude columns that start with 'Roll' or contain a '/'
