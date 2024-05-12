@@ -119,7 +119,7 @@ with tab1:
         st.markdown(f"Mode: {mode_sleep_hours}:{mode_sleep_minutes} ({mode_sleep_hours_count})")
     with col2:
         avg_inbed_hours = int(df['inBed'].mean())
-        avg_inbed_minutes = round((df['inBed'].mean() - avg_inbed_hours) * 60)
+        avg_inbed_hours = round((df['inBed'].mean() - avg_inbed_hours) * 60)
         median_inbed_hours = int(df['inBed'].median())
         median_inbed_minutes = round((df['inBed'].median() - median_inbed_hours) * 60)
         mode_inbed_hours = int(df['inBed'].mode().iloc[0])
@@ -127,9 +127,9 @@ with tab1:
         mode_inbed_hours_count = df['inBed'].value_counts().max()
 
         st.markdown("#### In Bed Time")
-        st.markdown(f"Average: {avg_sleep_hours}:{avg_sleep_minutes}")
-        st.markdown(f"Median: {median_sleep_hours}:{median_sleep_minutes}")
-        st.markdown(f"Mode: {mode_sleep_hours}:{mode_sleep_minutes} ({mode_sleep_hours_count})")
+        st.markdown(f"Average: {avg_inbed_hours}:{avg_inbed_hours}")
+        st.markdown(f"Median: {median_inbed_hours}:{median_inbed_minutes}")
+        st.markdown(f"Mode: {mode_inbed_hours}:{mode_inbed_minutes} ({mode_inbed_hours_count})")
 
 
 
