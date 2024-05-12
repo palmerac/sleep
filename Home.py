@@ -112,11 +112,19 @@ with tab1:
         mode_sleep_hours = int(df['asleep'].mode().iloc[0])
         mode_sleep_minutes = round((df['asleep'].mode().iloc[0] - mode_sleep_hours) * 60)
         mode_sleep_hours_count = df['asleep'].value_counts().max()
+        max_sleep_hours = int(df['asleep'].max())
+        max_sleep_minutes = round((df['asleep'].max() - max_sleep_hours) * 60)
+        min_sleep_hours = int(df['asleep'].min())
+        min_sleep_minutes = round((df['asleep'].min() - min_sleep_hours) * 60)
     
         st.markdown("#### Sleep Time")
         st.markdown(f"Average: {avg_sleep_hours}:{avg_sleep_minutes}")
         st.markdown(f"Median: {median_sleep_hours}:{median_sleep_minutes}")
         st.markdown(f"Mode: {mode_sleep_hours}:{mode_sleep_minutes} ({mode_sleep_hours_count})")
+        st.markdown(f"Max: {max_sleep_hours}:{max_sleep_minutes}")
+        st.markdown(f"Min: {min_sleep_hours}:{min_sleep_minutes}")
+        ## Add Var?
+
     with col2:
         avg_inbed_hours = int(df['inBed'].mean())
         avg_inbed_minutes = round((df['inBed'].mean() - avg_inbed_hours) * 60)
@@ -125,38 +133,49 @@ with tab1:
         mode_inbed_hours = int(df['inBed'].mode().iloc[0])
         mode_inbed_minutes = round((df['inBed'].mode().iloc[0] - mode_inbed_hours) * 60)
         mode_inbed_hours_count = df['inBed'].value_counts().max()
+        max_inbed_hours = int(df['inBed'].max())
+        max_inbed_minutes = round((df['inBed'].max() - max_inbed_hours) * 60)
+        min_inbed_hours = int(df['inBed'].min())
+        min_inbed_minutes = round((df['inBed'].min() - min_inbed_hours) * 60)
 
         st.markdown("#### In Bed Time")
         st.markdown(f"Average: {avg_inbed_hours}:{avg_inbed_minutes}")
         st.markdown(f"Median: {median_inbed_hours}:{median_inbed_minutes}")
         st.markdown(f"Mode: {mode_inbed_hours}:{mode_inbed_minutes} ({mode_inbed_hours_count})")
-
-
-
+        st.markdown(f"Max: {max_inbed_hours}:{max_inbed_minutes}")
+        st.markdown(f"Min: {min_inbed_hours}:{min_inbed_minutes}")
 
     with col3:
         st.markdown("#### Sleep BPM")
         st.markdown(f"Average: {round(df['sleepBPM'].mean(),1)}")
         st.markdown(f"Median: {round(df['sleepBPM'].median(),1)}")
         st.markdown(f"Mode: {round(df['sleepBPM'].mode().iloc[0],1)} ({df['sleepBPM'].value_counts().max()})")
+        st.markdown(f"Max: {round(df['sleepBPM'].max(),1)}")
+        st.markdown(f"Min: {round(df['sleepBPM'].min(),1)}")
 
     with col4:
         st.markdown("#### Waking BPM")
         st.markdown(f"Average: {round(df['wakingBPM'].mean(),1)}")
         st.markdown(f"Median: {round(df['wakingBPM'].median(),1)}")
         st.markdown(f"Mode: {round(df['wakingBPM'].mode().iloc[0],1)} ({df['wakingBPM'].value_counts().max()})")
+        st.markdown(f"Max: {round(df['wakingBPM'].max(),1)}")
+        st.markdown(f"Min: {round(df['wakingBPM'].min(),1)}")
     
     with col5:
         st.markdown("#### Sleep HRV")
         st.markdown(f"Average: {round(df['sleepHRV'].mean(),1)}")
         st.markdown(f"Median: {round(df['sleepHRV'].median(),1)}")
         st.markdown(f"Mode: {round(df['sleepHRV'].mode().iloc[0],1)} ({df['sleepHRV'].value_counts().max()})")
+        st.markdown(f"Max: {round(df['sleepHRV'].max(),1)}")
+        st.markdown(f"Min: {round(df['sleepHRV'].min(),1)}")
 
     with col6:
         st.markdown("#### Efficiency")
         st.markdown(f"Average: {round(df['efficiency'].mean(),1)}")
         st.markdown(f"Median: {round(df['efficiency'].median(),1)}")
         st.markdown(f"Mode: {round(df['efficiency'].mode().iloc[0],1)} ({df['efficiency'].value_counts().max()})")
+        st.markdown(f"Max: {round(df['efficiency'].max(),1)}")
+        st.markdown(f"Min: {round(df['efficiency'].min(),1)}")
 
     st.markdown('---')
     col1, col2 = st.columns(2)
