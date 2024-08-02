@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import streamlit as st
 import datetime as dt
+from scipy import stats
 
 plt.style.use('ggplot')
 st.set_page_config(layout="wide")
@@ -37,7 +38,8 @@ def load_data(uploaded_file):
     if uploaded_file is not None:
         df = pd.read_csv(uploaded_file)
     else:
-        csv_files = ['csvs/AutoSleep-20200124-to-20221231.csv', 'csvs/AutoSleep-20230101-to-20240511.csv']
+        import os
+        csv_files = [os.path.join('csvs', f) for f in os.listdir('csvs') if f.endswith('.csv')]
         df = pd.concat([pd.read_csv(f) for f in csv_files])
         df = df.drop_duplicates(subset='fromDate')
     return df
@@ -88,7 +90,7 @@ daysMissed = (daysPassed - len(df)) % 30
 
 # Rolling values
 cols_to_roll = ['asleep', 'quality', 'deep', 'efficiency', 'sleepBPM', 'wakingBPM', 'hrv', 'sleepHRV']
-periods = [7,15,30,60, 90]
+periods = [30,60,90,180]
 
 for col in cols_to_roll:
     for period in periods:
@@ -311,21 +313,19 @@ with tab3:
     start_date = pd.to_datetime(st.date_input("Start Date", value=df['fromDate'].min().date(), min_value=df['fromDate'].min().date()))
     end_date = pd.to_datetime(st.date_input("End Date", value=df['fromDate'].max().date(), max_value=df['fromDate'].max().date()))
     df_filtered = df[(df['fromDate'] >= start_date) & (df['fromDate'] <= end_date)]
-    period = st.selectbox('Select Period', [7, 15, 30, 60, 90])
-
+    period = st.selectbox('Select Period', [60,90,180])
     st.set_option('deprecation.showPyplotGlobalUse', False)
+
     with st.expander("Time Asleep"):
         fig, ax = plt.subplots(figsize=(18,6))
-        ax.plot(df_filtered['fromDate'], df_filtered[f'asleepRoll{period}'], label="Asleep")
+        ax.plot(df_filtered['fromDate'], df_filtered[f'asleepRoll{period}'], label="Asleep", color='r')
         ax.axhline(df_filtered[f'asleepRoll{period}'].max(), color='g', linestyle='--')
         ax.axhline(df_filtered[f'asleepRoll{period}'].min(), color='b', linestyle='--')
-
         min_date = df_filtered.loc[df_filtered[f'asleepRoll{period}'].idxmin()]['fromDate']
-        ax.text(min_date, (df_filtered[f'asleepRoll{period}'].min()*1.05), f'Min: {round(df_filtered[f"asleepRoll{period}"].min(),2)}', 
+        ax.text(min_date, (df_filtered[f'asleepRoll{period}'].min()*1.05), f'Min: {round(df_filtered[f"asleepRoll{period}"].min(),2)}',
                 color='b', ha='right', va='center')
-        ax.text(min_date, (df_filtered[f'asleepRoll{period}'].max()*0.95), f'Max: {round(df_filtered[f"asleepRoll{period}"].max(),2)}', 
+        ax.text(min_date, (df_filtered[f'asleepRoll{period}'].max()*0.95), f'Max: {round(df_filtered[f"asleepRoll{period}"].max(),2)}',
                 color='g', ha='right', va='center')
-
         ax.set_title(f'{period}-day Rolling Average Sleep')
         ax.set_xlabel('Date')
         ax.set_ylabel('Sleep')
@@ -345,7 +345,7 @@ with tab3:
     with st.expander("Efficiency"):
         fig, ax = plt.subplots(figsize=(16,6))
         ax.plot(df_filtered['fromDate'], df_filtered[f'efficiencyRoll{period}'])
-        ax.axhline(df_filtered[f'sleepBPMRoll{period}'].max(), color='g', linestyle='--')
+        # ax.axhline(df_filtered[f'sleepBPMRoll{period}'].max(), color='g', linestyle='--')
         # ax.axhline(df_filtered[f'sleepBPMRoll{period}'].min(), color='b', linestyle='--')
 
         # min_date = df_filtered.loc[df_filtered[f'sleepBPMRoll{period}'].idxmin()]['fromDate']
@@ -404,27 +404,59 @@ with tab5:
     with st.expander("Sleep Time"):
         df_slp_hist = df_hist[(df_hist['asleep'] >= 3) & (df_hist['asleep'] <= 12)]
         fig, ax = plt.subplots(figsize=(16,6))
-        ax.hist(df_slp_hist['asleep'], bins=(12-3)*2, edgecolor='black')
-        ax.set_title('Histogram of Asleep Time')
+        n, bins, patches = ax.hist(df_slp_hist['asleep'], bins=(12-3)*2, edgecolor='black', density=True)
+        
+        # Add bell curve
+        mu, std = stats.norm.fit(df_slp_hist['asleep'])
+        xmin, xmax = ax.get_xlim()
+        x = np.linspace(xmin, xmax, 100)
+        p = stats.norm.pdf(x, mu, std)
+        ax.plot(x, p, 'k', linewidth=2)
+        
+        ax.set_title('Histogram of Asleep Time with Normal Distribution')
         ax.set_xlabel('Asleep Time (hours)')
-        ax.set_ylabel('Frequency')
+        ax.set_ylabel('Density')
         st.pyplot(fig)
 
     with st.expander("Sleep BPM"):
         fig, ax = plt.subplots(figsize=(16,6))
-        ax.hist(df_hist['sleepBPM'], bins=int((90-40)/2.5), edgecolor='black', range=(40,90))
-        ax.set_title('Histogram of Sleep BPM')
-        ax.set_xlabel('Sleep BPM')
-        ax.set_ylabel('Frequency')
-        st.pyplot(fig)
+        df_hist = df_hist.dropna(subset=['sleepBPM'])
+        if not df_hist.empty:
+            n, bins, patches = ax.hist(df_hist['sleepBPM'], bins=int((90-40)/2.5), edgecolor='black', range=(40,90), density=True)
+            
+            # Add bell curve
+            mu, std = stats.norm.fit(df_hist['sleepBPM'])
+            xmin, xmax = ax.get_xlim()
+            x = np.linspace(xmin, xmax, 100)
+            p = stats.norm.pdf(x, mu, std)
+            ax.plot(x, p, 'k', linewidth=2)
+            
+            ax.set_title('Histogram of Sleep BPM with Normal Distribution')
+            ax.set_xlabel('Sleep BPM')
+            ax.set_ylabel('Density')
+            st.pyplot(fig)
+        else:
+            st.warning("No data available for Sleep BPM")
 
     with st.expander("Sleep HRV"):
         fig, ax = plt.subplots(figsize=(16,6))
-        ax.hist(df_hist['sleepHRV'], bins=26, edgecolor='black', range=(20,150))
-        ax.set_title('Histogram of Sleep HRV')
-        ax.set_xlabel('Sleep HRV')
-        ax.set_ylabel('Frequency')
-        st.pyplot(fig)
+        df_hist = df_hist.dropna(subset=['sleepHRV'])
+        if not df_hist.empty:
+            n, bins, patches = ax.hist(df_hist['sleepHRV'], bins=26, edgecolor='black', range=(20,150), density=True)
+            
+            # Add bell curve
+            mu, std = stats.norm.fit(df_hist['sleepHRV'])
+            xmin, xmax = ax.get_xlim()
+            x = np.linspace(xmin, xmax, 100)
+            p = stats.norm.pdf(x, mu, std)
+            ax.plot(x, p, 'k', linewidth=2)
+            
+            ax.set_title('Histogram of Sleep HRV with Normal Distribution')
+            ax.set_xlabel('Sleep HRV')
+            ax.set_ylabel('Density')
+            st.pyplot(fig)
+        else:
+            st.warning("No data available for Sleep HRV")
 
 with tab6:
     # Exclude columns that start with 'Roll' or contain a '/'
