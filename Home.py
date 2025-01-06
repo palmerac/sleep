@@ -351,7 +351,6 @@ with tab2:
             .reset_index()
         )
 
-        st.set_option("deprecation.showPyplotGlobalUse", False)
         fig, ax1 = plt.subplots(figsize=(12, 6))
 
         color = "tab:red"
@@ -449,7 +448,6 @@ with tab3:
     )
     df_filtered = df[(df["fromDate"] >= start_date) & (df["fromDate"] <= end_date)]
     period = st.selectbox("Select Period", [15, 30, 60, 90, 180])
-    st.set_option("deprecation.showPyplotGlobalUse", False)
     df_filtered = df_filtered.sort_values(by="fromDate")
 
     with st.expander("Time Asleep"):
@@ -663,7 +661,6 @@ with tab6:
         columns=[col for col in df.columns if "Roll" in col or "/" in col], axis=1
     )
     correlation_matrix = round(dfSimple.corr(numeric_only=True), 4)
-    st.set_option("deprecation.showPyplotGlobalUse", False)
     fig, ax = plt.subplots(figsize=(12, 10))
     sns.heatmap(correlation_matrix, annot=True, cmap="coolwarm", center=0, ax=ax)
     ax.set_title("Correlation Matrix")
